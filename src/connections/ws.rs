@@ -303,8 +303,21 @@ async fn read_loop(
 ) {
     loop {
         let mut stream = stream.lock().await;
-        let Ok(Some(Ok(msg))) = timeout(Duration::from_millis(100), stream.next()).await else {
-            continue;
+        let msg = match timeout(Duration::from_millis(100), stream.next()).await {
+            Ok(Some(Ok(msg))) => msg,
+            // io error before closed
+            Ok(Some(Err(e))) => {
+                eprintln!("WS error: {}", e);
+                // expect `None` for next poll
+                continue;
+            }
+            // closed already
+            Ok(None) => {
+                eprintln!("WS closed");
+                break;
+            }
+            // timeout
+            Err(_) => continue,
         };
 
         match msg {
@@ -313,10 +326,15 @@ async fn read_loop(
                     handle_message(&value, &request_map, &subscriptions, &text).await;
                 }
             }
-            Message::Close(_) => break,
+            Message::Close(_) => {
+                eprintln!("WS message::close");
+                break;
+            }
             _ => (),
         }
     }
+
+    clear_channels(&request_map, &subscriptions).await;
 }
 
 async fn ping_loop(
@@ -378,4 +396,12 @@ async fn handle_subscription(
     if let Some(sub) = subscriptions.lock().await.get(id) {
         let _ = sub.sender.send(result.clone()).await;
     }
+}
+
+async fn clear_channels(
+    request_map: &Arc<Mutex<HashMap<u64, RequestTracker>>>,
+    subscriptions: &Arc<Mutex<HashMap<String, Subscription>>>,
+) {
+    request_map.lock().await.clear();
+    subscriptions.lock().await.clear();
 }
