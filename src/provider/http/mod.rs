@@ -1,6 +1,8 @@
 pub mod quote;
 pub mod swap;
 
+use crate::common::constants::WARNING_TLS_SLOWDOWN;
+use crate::provider::utils::timestamp_rfc3339;
 use anyhow::{anyhow, Result};
 use reqwest::{
     header::{HeaderMap, HeaderValue},
@@ -8,10 +10,8 @@ use reqwest::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
-use crate::common::constants::WARNING_TLS_SLOWDOWN;
 use solana_sdk::{pubkey::Pubkey, signature::Keypair};
 use solana_trader_proto::api::{self, PostSubmitPaladinRequest};
-use crate::provider::utils::timestamp_rfc3339;
 
 use crate::{
     common::{
@@ -152,7 +152,7 @@ impl HTTPClient {
         let request_json = json!({
             "entries": entries,
             "useBundle": use_bundle,
-            "submitStrategy": submit_opts.submit_strategy
+            "submitStrategy": submit_opts.submit_strategy.as_str_name(),
         });
 
         let response = self
@@ -180,28 +180,23 @@ impl HTTPClient {
         entries: Vec<api::PostSubmitRequestEntry>,
         submit_strategy: api::SubmitStrategy,
         use_bundle: Option<bool>,
-        front_running_protection: Option<bool>
+        front_running_protection: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitBatchResponse> {
         let url = format!("{}/api/v1/trade/submit-batch", self.base_url);
         println!("{}", url);
-        
+
         let request_json = json!({
             "entries": entries,
-            "submitStrategy": submit_strategy,
+            "submitStrategy": submit_strategy.as_str_name(),
             "useBundle": use_bundle,
             "frontRunningProtection": front_running_protection,
             "timestamp": timestamp_rfc3339()
         });
-        
-        let response = self
-            .client
-            .post(&url)
-            .json(&request_json)
-            .send()
-            .await?;
-            
+
+        let response = self.client.post(&url).json(&request_json).send().await?;
+
         let result: api::PostSubmitBatchResponse = self.handle_response(response).await?;
-        
+
         Ok(result)
     }
 
@@ -210,53 +205,43 @@ impl HTTPClient {
         entries: Vec<api::PostSubmitRequestEntry>,
         submit_strategy: api::SubmitStrategy,
         use_bundle: Option<bool>,
-        front_running_protection: Option<bool>
+        front_running_protection: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitBatchResponse> {
         let url = format!("{}/api/v2/submit-batch", self.base_url);
         println!("{}", url);
-        
+
         let request_json = json!({
             "entries": entries,
-            "submitStrategy": submit_strategy,
+            "submitStrategy": submit_strategy.as_str_name(),
             "useBundle": use_bundle,
             "frontRunningProtection": front_running_protection,
             "timestamp": timestamp_rfc3339()
         });
-        
-        let response = self
-            .client
-            .post(&url)
-            .json(&request_json)
-            .send()
-            .await?;
-            
+
+        let response = self.client.post(&url).json(&request_json).send().await?;
+
         let result: api::PostSubmitBatchResponse = self.handle_response(response).await?;
-        
+
         Ok(result)
     }
 
     pub async fn post_submit_paladin_v2(
         &self,
-        request: &PostSubmitPaladinRequest
+        request: &PostSubmitPaladinRequest,
     ) -> anyhow::Result<api::PostSubmitResponse> {
         let url = format!("{}/api/v2/submit-paladin", self.base_url);
         println!("{}", url);
-        
+
         let request_json = json!({
             "transaction": request.transaction,
             "revertProtection": request.revert_protection,
             "timestamp": timestamp_rfc3339()
         });
-        
-        let response = self
-            .client
-            .post(&url)
-            .json(&request_json)
-            .send()
-            .await?;
-            
+
+        let response = self.client.post(&url).json(&request_json).send().await?;
+
         let result: api::PostSubmitResponse = self.handle_response(response).await?;
-        
+
         Ok(result)
     }
 
@@ -309,29 +294,24 @@ impl HTTPClient {
     pub async fn post_submit_snipe_v2(
         &self,
         entries: Vec<api::PostSubmitRequestEntry>,
-        use_staked_rpcs: Option<bool>
+        use_staked_rpcs: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitSnipeResponse> {
         let url = format!("{}/api/v2/submit-snipe", self.base_url);
         println!("{}", url);
-        
+
         let request_json = json!({
             "entries": entries,
             "useStakedRPCs": use_staked_rpcs,
             "timestamp": timestamp_rfc3339()
         });
-        
-        let response = self
-            .client
-            .post(&url)
-            .json(&request_json)
-            .send()
-            .await?;
-            
+
+        let response = self.client.post(&url).json(&request_json).send().await?;
+
         let result: api::PostSubmitSnipeResponse = self.handle_response(response).await?;
-        
+
         Ok(result)
     }
-    
+
     pub async fn post_submit_v2(
         &self,
         transaction: api::TransactionMessage,
@@ -342,11 +322,11 @@ impl HTTPClient {
         fast_best_effort: Option<bool>,
         allow_back_run: Option<bool>,
         revenue_address: Option<String>,
-        sniping: Option<bool>
+        sniping: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitResponse> {
         let url = format!("{}/api/v2/submit", self.base_url);
         println!("{}", url);
-        
+
         let request_json = json!({
             "transaction": transaction,
             "skipPreFlight": skip_pre_flight,
@@ -359,16 +339,11 @@ impl HTTPClient {
             "sniping": sniping,
             "timestamp": timestamp_rfc3339()
         });
-        
-        let response = self
-            .client
-            .post(&url)
-            .json(&request_json)
-            .send()
-            .await?;
-            
+
+        let response = self.client.post(&url).json(&request_json).send().await?;
+
         let result: api::PostSubmitResponse = self.handle_response(response).await?;
-        
+
         Ok(result)
     }
 
@@ -475,7 +450,7 @@ impl HTTPClient {
     }
 
     pub async fn post_submit(
-        &self, 
+        &self,
         transaction: api::TransactionMessage,
         skip_pre_flight: bool,
         front_running_protection: Option<bool>,
@@ -484,11 +459,11 @@ impl HTTPClient {
         fast_best_effort: Option<bool>,
         allow_back_run: Option<bool>,
         revenue_address: Option<String>,
-        sniping: Option<bool>
+        sniping: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitResponse> {
         let url = format!("{}/api/v1/trade/submit", self.base_url);
         println!("{}", url);
-        
+
         let request_json = json!({
             "transaction": transaction,
             "skipPreFlight": skip_pre_flight,
@@ -501,16 +476,16 @@ impl HTTPClient {
             "sniping": sniping,
             "timestamp": timestamp_rfc3339()
         });
-        
+
         let response = self
             .client
             .post(format!("{}/api/v1/trade/submit", self.base_url))
             .json(&request_json)
             .send()
             .await?;
-            
+
         let result: api::PostSubmitResponse = self.handle_response(response).await?;
-        
+
         Ok(result)
     }
 
