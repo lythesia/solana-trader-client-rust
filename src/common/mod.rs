@@ -32,7 +32,7 @@ pub fn is_submit_only_endpoint(endpoint: &str) -> bool {
         endpoint,
         MAINNET_FRANKFURT | MAINNET_LA | MAINNET_AMSTERDAM | MAINNET_TOKYO
     ) && {
-        println!("\x1b[93m⚠️  WARNING\x1b[0m: Endpoint \x1b[96m{}\x1b[0m only supports transaction submission. Quotes, streams and other services are \x1b[91mnot available\x1b[0m.", endpoint);
+        log::warn!("Endpoint {} only supports transaction submission. Quotes, streams and other services are not available.", endpoint);
         true
     }
 }
@@ -45,9 +45,9 @@ pub fn get_base_url_from_env() -> (String, bool) {
         .to_lowercase();
     let secure = matches!(secure_env.as_str(), "true" | "1" | "yes");
 
-    println!("network {}", network);
-    println!("region {}", region);
-    println!("secure {}", secure);
+    log::info!("network {}", network);
+    log::info!("region {}", region);
+    log::info!("secure {}", secure);
 
     let base_url = match (network.as_str(), region.as_str()) {
         ("LOCAL", _) => LOCAL.to_string(),
@@ -82,7 +82,7 @@ impl BaseConfig {
         let public_key = env::var("PUBLIC_KEY").ok().and_then(|pk_str| {
             Pubkey::from_str(&pk_str)
                 .map_err(|e| {
-                    println!("Warning: Failed to parse public key: {}", e);
+                    log::warn!("Warning: Failed to parse public key: {}", e);
                     e
                 })
                 .ok()
@@ -94,12 +94,12 @@ impl BaseConfig {
                 Ok(_) => match Keypair::try_from(&output[..]) {
                     Ok(kp) => Some(kp),
                     Err(e) => {
-                        println!("Warning: Failed to create keypair: {}", e);
+                        log::warn!("Warning: Failed to create keypair: {}", e);
                         None
                     }
                 },
                 Err(e) => {
-                    println!("Warning: Failed to decode private key: {}", e);
+                    log::warn!("Warning: Failed to decode private key: {}", e);
                     None
                 }
             }

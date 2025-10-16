@@ -61,7 +61,7 @@ impl WS {
         let (base_url, secure) = get_base_url_from_env();
         let endpoint = endpoint.unwrap_or_else(|| ws_endpoint(&base_url, secure));
         if endpoint.starts_with("wss://") {
-            println!("{}", WARNING_TLS_SLOWDOWN);
+            log::warn!("{}", WARNING_TLS_SLOWDOWN);
         }
 
         if base.auth_header.is_empty() {
@@ -110,7 +110,7 @@ impl WS {
             .await
             {
                 Ok((stream, _)) => {
-                    println!("Connected to: {}", url);
+                    log::debug!("Connected to: {}", url);
                     return Ok(stream);
                 }
                 Err(e) => {
@@ -273,12 +273,12 @@ impl WS {
 
         let mut stream = self.stream.lock().await;
         if let Err(e) = stream.close(None).await {
-            eprintln!("Error during WebSocket close: {}", e);
+            log::error!("Error during WebSocket close: {}", e);
         }
         drop(stream);
 
         tokio::time::sleep(Duration::from_millis(100)).await;
-        println!("WebSocket shutdown complete");
+        log::debug!("WebSocket shutdown complete");
         Ok(())
     }
 }
@@ -290,7 +290,7 @@ async fn write_loop(
     while let Some(msg) = write_rx.recv().await {
         let mut stream = stream.lock().await;
         if let Err(e) = stream.send(msg).await {
-            eprintln!("Write error: {}", e);
+            log::error!("Write error: {}", e);
             break;
         }
     }
@@ -307,13 +307,13 @@ async fn read_loop(
             Ok(Some(Ok(msg))) => msg,
             // io error before closed
             Ok(Some(Err(e))) => {
-                eprintln!("WS error: {}", e);
+                log::error!("WS error: {}", e);
                 // expect `None` for next poll
                 continue;
             }
             // closed already
             Ok(None) => {
-                eprintln!("WS closed");
+                log::debug!("WS closed");
                 break;
             }
             // timeout
@@ -327,7 +327,7 @@ async fn read_loop(
                 }
             }
             Message::Close(_) => {
-                eprintln!("WS message::close");
+                log::debug!("WS message::close");
                 break;
             }
             _ => (),
@@ -347,7 +347,7 @@ async fn ping_loop(
             _ = interval.tick() => {
                 let mut stream = stream.lock().await;
                 if let Err(e) = stream.send(Message::Ping(vec![])).await {
-                    eprintln!("Ping error: {}", e);
+                    log::error!("Ping error: {}", e);
                     break;
                 }
             }

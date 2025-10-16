@@ -42,7 +42,7 @@ impl HTTPClient {
         let final_base_url = endpoint.unwrap_or(default_base_url);
         let endpoint = http_endpoint(&final_base_url, secure);
         if endpoint.starts_with("https://") {
-            println!("{}", WARNING_TLS_SLOWDOWN);
+            log::warn!("{}", WARNING_TLS_SLOWDOWN);
         }
 
         is_submit_only_endpoint(&final_base_url);
@@ -80,7 +80,7 @@ impl HTTPClient {
     }
 
     async fn handle_response<T: DeserializeOwned>(&self, response: reqwest::Response) -> Result<T> {
-        println!("Response: {:?}", response);
+        log::debug!("Response: {:?}", response);
         if !response.status().is_success() {
             let error_text = response
                 .text()
@@ -183,7 +183,7 @@ impl HTTPClient {
         front_running_protection: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitBatchResponse> {
         let url = format!("{}/api/v1/trade/submit-batch", self.base_url);
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let request_json = json!({
             "entries": entries,
@@ -208,7 +208,7 @@ impl HTTPClient {
         front_running_protection: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitBatchResponse> {
         let url = format!("{}/api/v2/submit-batch", self.base_url);
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let request_json = json!({
             "entries": entries,
@@ -230,7 +230,7 @@ impl HTTPClient {
         request: &PostSubmitPaladinRequest,
     ) -> anyhow::Result<api::PostSubmitResponse> {
         let url = format!("{}/api/v2/submit-paladin", self.base_url);
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let request_json = json!({
             "transaction": request.transaction,
@@ -297,7 +297,7 @@ impl HTTPClient {
         use_staked_rpcs: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitSnipeResponse> {
         let url = format!("{}/api/v2/submit-snipe", self.base_url);
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let request_json = json!({
             "entries": entries,
@@ -325,7 +325,7 @@ impl HTTPClient {
         sniping: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitResponse> {
         let url = format!("{}/api/v2/submit", self.base_url);
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let request_json = json!({
             "transaction": transaction,
@@ -388,7 +388,7 @@ impl HTTPClient {
             self.base_url, request.signature
         );
 
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let response = self
             .client
@@ -399,7 +399,7 @@ impl HTTPClient {
 
         let response_text = response.text().await?;
 
-        println!("{}", response_text);
+        log::debug!("{}", response_text);
 
         // let mut value: serde_json::Value = serde_json::from_str(&response_text)
         //     .map_err(|e| anyhow::anyhow!("Failed to parse response as JSON: {}", e))?;
@@ -422,7 +422,7 @@ impl HTTPClient {
     pub async fn get_recent_block_hash(&self) -> anyhow::Result<api::GetRecentBlockHashResponse> {
         let url = format!("{}/api/v1/system/blockhash", self.base_url);
 
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let response = self
             .client
@@ -437,7 +437,7 @@ impl HTTPClient {
     pub async fn get_server_time(&self) -> anyhow::Result<api::GetServerTimeResponse> {
         let url = format!("{}/api/v1/system/time", self.base_url);
 
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let response = self
             .client
@@ -462,7 +462,7 @@ impl HTTPClient {
         sniping: Option<bool>,
     ) -> anyhow::Result<api::PostSubmitResponse> {
         let url = format!("{}/api/v1/trade/submit", self.base_url);
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let request_json = json!({
             "transaction": transaction,
@@ -498,7 +498,7 @@ impl HTTPClient {
             self.base_url, request.offset
         );
 
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let response = self
             .client
@@ -513,7 +513,7 @@ impl HTTPClient {
     pub async fn get_rate_limit(&self) -> anyhow::Result<api::GetRateLimitResponse> {
         let url = format!("{}/api/v2/rate-limit", self.base_url);
 
-        println!("{}", url);
+        log::debug!("{}", url);
 
         let response = self
             .client
@@ -529,7 +529,7 @@ impl HTTPClient {
         &self,
         request: api::GetAccountBalanceRequest,
     ) -> anyhow::Result<api::GetAccountBalanceResponse> {
-        println!("here1");
+        log::debug!("here1");
 
         let url = format!(
             "{}/api/v2/balance?ownerAddress={}",
